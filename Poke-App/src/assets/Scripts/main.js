@@ -68,6 +68,7 @@ const submitHandler = async (e) => {
   }
 };
 
+// ランダムなポケモンを表示するためのコード
 const randomButton = document.querySelector("#js-random-button");
 
 const randomHandler = async () => {
@@ -84,8 +85,84 @@ const randomHandler = async () => {
   }
 };
 
+const STORAGE_KEY = "favoritePokemon";
+
+const loadFavorites = () => {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
+};
+
+const saveFavorites = (favorites) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+};
+
+const showFavorites = () => {
+  const favorites = loadFavorites();
+
+  document.querySelector("#js-favorites").innerHTML = favorites
+    .map(
+      (pokemon) => `
+    <article class="favorite-card">
+      <button
+        type="button"
+        class="favorite-name"
+        data-name="${pokemon.name}"
+      >
+        ${pokemon.name}
+      </button>
+
+      <img
+        class="favorite-image"
+        src="${pokemon.img ?? ""}"
+        alt="${pokemon.name}"
+      >
+
+      <button type="button" data-remove-id="${pokemon.id}">
+        Remove
+      </button>
+    </article>
+  `,
+    )
+    .join("");
+};
+
+// お気に入り登録
+document.querySelector("#js-favorite-button").addEventListener("click", () => {
+  if (!currentPokemon) return;
+
+  const favorites = loadFavorites();
+  const alreadyExists = favorites.some(
+    (pokemon) => pokemon.id === currentPokemon.id,
+  );
+
+  if (alreadyExists) return;
+
+  favorites.push(currentPokemon);
+  saveFavorites(favorites);
+  showFavorites();
+});
+
+// お気に入り削除
+document.querySelector("#js-favorites").addEventListener("click", async (e) => {
+  const name = e.target.dataset.name;
+  const removeId = Number(e.target.dataset.removeId);
+
+  if (name) {
+    await displayPokemon(name);
+  }
+
+  if (removeId) {
+    const favorites = loadFavorites().filter(
+      (pokemon) => pokemon.id !== removeId,
+    );
+    saveFavorites(favorites);
+    showFavorites();
+  }
+});
+
 randomButton.addEventListener("click", randomHandler);
 
 document
   .querySelector("#js-form")
   .addEventListener("submit", (e) => submitHandler(e));
+
+showFavorites();
